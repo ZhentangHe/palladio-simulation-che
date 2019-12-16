@@ -12,8 +12,23 @@ export function start(context: theia.PluginContext) {
         id: 'palladio.start',
         label: "Palladio: Start Simulation"
     };
+    const PalladioSimOpenModelsOptions: theia.OpenDialogOptions = {
+        canSelectMany: true,
+        canSelectFiles: true,
+        openLabel: 'Simulate',
+        filters: {
+            'Model files': ['model']
+        }
+    }
     context.subscriptions.push(
         theia.commands.registerCommand(palladioSimulationStartCommand, (...args: any[]) => {
+            theia.window.showOpenDialog(PalladioSimOpenModelsOptions).then(fileUri => {
+                if(fileUri) {
+                    fileUri.forEach(element => {
+                        theia.window.showInformationMessage('selected file: ' + element.fsPath);
+                    });                    
+                }
+            })
             theia.window.showInformationMessage('palladio simulation started');
             //select which container to run
             theia.commands.executeCommand('terminal-in-specific-container:new');
@@ -25,6 +40,7 @@ export function start(context: theia.PluginContext) {
             })
         })
     );
+
 }
 
 export function stop() {
