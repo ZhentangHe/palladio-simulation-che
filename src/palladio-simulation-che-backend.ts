@@ -26,16 +26,30 @@ export function start(context: theia.PluginContext) {
                 if(fileUri) {
                     fileUri.forEach(element => {
                         theia.window.showInformationMessage('selected file: ' + element.fsPath);
-                    });                    
+                        //TODO: simulate each model according to fileUri's given path
+                    })
                 }
-                theia.window.showInformationMessage('palladio simulation started');
+                // async() => {
+                //     theia.window.showInformationMessage('models are selected');
+                //     await new Promise( resolve => setTimeout(resolve, 500) );
+                //     theia.window.showInformationMessage('palladio simulation started');
+                // }
+
                 //select which container to run
                 theia.commands.executeCommand('terminal-in-specific-container:new');
-                //dummy, not encapsulated impl.
+
                 theia.window.onDidOpenTerminal(async (openedTerminal: theia.Terminal) => {
                     const openedTerminalId = await openedTerminal.processId;
                     openedTerminal.sendText('clear && echo Palladio Simulation started.\n');
-                    openedTerminal.sendText('touch test.csv && ls');               
+                    openedTerminal.sendText('touch test.csv && echo test.csv generated.\n');
+                    openedTerminal.sendText('cp test.csv ../projects/palladio-simulation/data/test.csv');
+                    // theia.commands.executeCommand('file.copyDownloadLink').then(downloadLink =>{
+                    //     console.log(downloadLink);
+                    // });
+                    const csvPattern = '**/data/*.{csv}';
+                    let watchers : theia.FileSystemWatcher[] = [];
+                    const csvWatcher = theia.workspace.createFileSystemWatcher(csvPattern);
+                    csvWatcher.onDidCreate(uri => console.log('csv file created:', uri.toString()));
                 })
             })
         })
