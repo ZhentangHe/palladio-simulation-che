@@ -4,6 +4,7 @@
  */
 
 import * as theia from '@theia/plugin';
+
 //import fs = require('fs');
 
 export function start(context: theia.PluginContext) {
@@ -34,7 +35,22 @@ export function start(context: theia.PluginContext) {
                     fileUri.forEach(element => {
                         theia.window.showInformationMessage('selected file: ' + element.fsPath);
                         //TODO: simulate each model according to fileUri's given path
-
+                        var XMLHttpRequest = require("xhr2");
+                        var xhr = new XMLHttpRequest();
+                        xhr.responseType = 'document';
+                        xhr.overrideMimeType('text/xml');
+                        xhr.onreadystatechange = function(){
+                            if(xhr.readyState == 4) {
+                                if((xhr.status >= 200 && xhr.status < 300) || xhr.status == 304) {
+                                    theia.window.showInformationMessage(xhr.responseText);
+                                } else {
+                                    theia.window.showInformationMessage("Request was unsuccessful:" + xhr.status);
+                                }
+                            }
+                        };
+                        xhr.open("get", experimentUrl, true);
+                        xhr.send(null);
+                        
                     })
                 }
 
