@@ -4,52 +4,71 @@
  */
 
 import * as theia from '@theia/plugin';
+//import fs = require('fs');
 
 export function start(context: theia.PluginContext) {
-    console.log(theia.window.state);
-    //Start Palladio Simulation Command
+    //console.log(theia.window.state);
+
+    //temporary url
+    const experimentUrl = "https://github.com/PalladioSimulator/Palladio-Addons-ExperimentAutomation/blob/master/bundles/org.palladiosimulator.experimentautomation.examples.espresso/model/Experiments/Capacity.experiments";
+
     const palladioSimulationStartCommand = {
         id: 'palladio.start',
         label: "Palladio: Start Simulation"
     };
+
     const PalladioSimOpenModelsOptions: theia.OpenDialogOptions = {
-        canSelectMany: true,
+        canSelectMany: false,
         canSelectFiles: true,
         openLabel: 'Simulate',
         filters: {
-            'Model files': ['model']
+            'Experiments Files': ['experiments']
         }
     }
+
     context.subscriptions.push(
         theia.commands.registerCommand(palladioSimulationStartCommand, (...args: any[]) => {
+            //console.log(args);
             theia.window.showOpenDialog(PalladioSimOpenModelsOptions).then(fileUri => {
                 if(fileUri) {
                     fileUri.forEach(element => {
                         theia.window.showInformationMessage('selected file: ' + element.fsPath);
                         //TODO: simulate each model according to fileUri's given path
+
                     })
                 }
-                // async() => {
-                //     theia.window.showInformationMessage('models are selected');
-                //     await new Promise( resolve => setTimeout(resolve, 500) );
-                //     theia.window.showInformationMessage('palladio simulation started');
-                // }
 
                 //select which container to run
-                theia.commands.executeCommand('terminal-in-specific-container:new');
-
+                theia.commands.executeCommand('terminal-in-specific-container:new' ,'golang');
+                //might need to be called on demand
+                
                 theia.window.onDidOpenTerminal(async (openedTerminal: theia.Terminal) => {
-                    const openedTerminalId = await openedTerminal.processId;
+                    //temp.
+                    //await new Promise(resolve => setTimeout(resolve, 10000));
+
+                    const openedTerminalId = (await openedTerminal.processId).toString();
+                    //beide's geht
+                    // openedTerminal.processId.then((processId) => {
+                    //     theia.window.showInformationMessage(`Terminal.processId: ${processId}`);
+                    // });
+                    const generatedFileStr = 'test' + openedTerminalId + '.csv';
+                    theia.window.showInformationMessage(`onDidOpenTerminal,
+                     id: ${openedTerminalId},
+                     name: ${openedTerminal.name}`);
+
                     openedTerminal.sendText('clear && echo Palladio Simulation started.\n');
-                    openedTerminal.sendText('touch test.csv && echo test.csv generated.\n');
-                    openedTerminal.sendText('cp test.csv ../projects/palladio-simulation/data/test.csv');
+                    openedTerminal.sendText('touch '+ generatedFileStr +' && echo ' + generatedFileStr +' generated.\n');
+                    openedTerminal.sendText('cp '+ generatedFileStr +' ../projects/palladio-simulation/data/'+ generatedFileStr);
+                    //should be like this instead
                     // theia.commands.executeCommand('file.copyDownloadLink').then(downloadLink =>{
                     //     console.log(downloadLink);
                     // });
-                    const csvPattern = '**/data/*.{csv}';
-                    let watchers : theia.FileSystemWatcher[] = [];
-                    const csvWatcher = theia.workspace.createFileSystemWatcher(csvPattern);
-                    csvWatcher.onDidCreate(uri => console.log('csv file created:', uri.toString()));
+                    // temp.
+                    // const csvPattern = '**/data/*.{csv}';
+                    // let watchers : theia.FileSystemWatcher[] = [];
+                    // const csvWatcher = theia.workspace.createFileSystemWatcher(csvPattern);
+                    // csvWatcher.onDidCreate(uri => console.log('csv file created:', uri.toString()));
+                    //.then(openedTerminal.dispose(););
                 })
             })
         })
