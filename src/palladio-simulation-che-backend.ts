@@ -39,9 +39,9 @@ export function start(context: theia.PluginContext) {
             // })
 
             //the path to the original experiments file
-            let experimentsDir = "/projects/RunExperimentData/RunExperimentData/ExperimentData/model/Experiments/Capacity.experiments";
+            let experimentsDir = "/projects/PalladioRunExperiment/PalladioRunExperiment/ExperimentData/model/Experiments/Capacity.experiments";
             //the path where to store the generated file
-            let outputCsvDir = "/projects/RunExperimentData/RunExperimentData/ExperimentData/model/Experiments/Capacity.csv";
+            let outputCsvDir = "/projects/PalladioRunExperiment/PalladioRunExperiment/ExperimentData/model/Experiments/Capacity.csv";
 
             if(args.length == 2) {
                 try {
