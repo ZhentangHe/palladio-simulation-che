@@ -21,27 +21,13 @@ export function start(context: theia.PluginContext) {
         }
     }
 
-    // superfluous 
-    // const PalladioSimExpFileOp: theia.WorkspaceFolderPickOptions = {
-    //     placeHolder: "testPlaceHolder"
-    // }
-
     context.subscriptions.push(
-        theia.commands.registerCommand(palladioSimulationStartCommand, (...args: any[]) => {
-            
-            // superfluous 
-            // theia.window.showWorkspaceFolderPick(PalladioSimExpFileOp).then(folder => {
-            //     if(typeof(folder) === 'undefined')
-            //         return;
-            //     else{
-            //         theia.window.showInformationMessage(folder.uri.toString()); 
-            //     }
-            // })
+        theia.commands.registerCommand(palladioSimulationStartCommand, (...args: any[]) => {            
 
             //the path to the original experiments file
             let experimentsDir = "/projects/RunExperimentData/RunExperimentData/ExperimentData/model/Experiments/Capacity.experiments";
             //the path where to store the generated file
-            let outputCsvDir = "/projects/RunExperimentData/RunExperimentData/ExperimentData/model/Experiments/Capacity.csv";
+            let outputCsvDir = "/projects/RunExperimentData/RunExperimentData/ExperimentData/model/Experiments/Capacity.gen.experiments";
 
             if(args.length == 2) {
                 try {
