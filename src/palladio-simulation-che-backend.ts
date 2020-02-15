@@ -21,33 +21,16 @@ export function start(context: theia.PluginContext) {
         }
     }
 
-    // superfluous 
-    // const PalladioSimExpFileOp: theia.WorkspaceFolderPickOptions = {
-    //     placeHolder: "testPlaceHolder"
-    // }
-
     context.subscriptions.push(
         theia.commands.registerCommand(palladioSimulationStartCommand, (...args: any[]) => {
-            
-            // superfluous 
-            // theia.window.showWorkspaceFolderPick(PalladioSimExpFileOp).then(folder => {
-            //     if(typeof(folder) === 'undefined')
-            //         return;
-            //     else{
-            //         theia.window.showInformationMessage(folder.uri.toString()); 
-            //     }
-            // })
 
             //the path to the original experiments file
-            let experimentsDir = "/projects/PalladioRunExperiment/PalladioRunExperiment/ExperimentData/model/Experiments/Capacity.experiments";
-            //the path where to store the generated file
-            let outputCsvDir = "/projects/PalladioRunExperiment/PalladioRunExperiment/ExperimentData/model/Experiments/Capacity.csv";
+            let inputExpDir = "/projects/PalladioRunExperiment/PalladioRunExperiment/ExperimentData/model/Experiments/Capacity.experiments";
 
-            if(args.length == 2) {
+            if(args.length == 1) {
                 try {
-                    experimentsDir = args[0].toString();
-                    outputCsvDir = args[1].toString();
-                    runSimulation(experimentsDir, outputCsvDir);
+                    inputExpDir = args[0].toString();
+                    runSimulation(inputExpDir);
                 } catch (error) {
                     console.log(error);
                     theia.window.showWarningMessage(error);
@@ -57,16 +40,18 @@ export function start(context: theia.PluginContext) {
             } else if(args.length == 0) {
                 theia.window.showOpenDialog(PalladioSimImpFileOp).then(fileUri => {
                     if(fileUri) {
-                        fileUri.forEach(element => {
-                            theia.window.showInformationMessage('selected file: ' + element.fsPath);               
-                        })
-                        runSimulation(experimentsDir, outputCsvDir);
+                        theia.window.showInformationMessage('selected file: ' + fileUri[0].fsPath);
+                        runSimulation("/projects" + fileUri[0].fsPath);
                     }
                     else {
+                        theia.window.showErrorMessage("specified file not found.")
+                        console.log("no such file.");
                         return;
                     }                    
                 })
             } else {
+                theia.window.showErrorMessage("wrong argument counter. It should be 0 or 1.");
+                console.log("wrong argument counter.")
                 return;
             }
 
@@ -79,7 +64,10 @@ export function stop() {
 
 }
 
-function runSimulation(experimentsDir: string, outputCsvDir: string) {
+function runSimulation(inputExpDir: string) {
+
+    let outputExpDir = inputExpDir.replace(/(.*\/)*([^.]+).*/ig,"$2") + ".gen.experiments";
+
     theia.commands.executeCommand('terminal-in-specific-container:new' ,'palladio-test');
     theia.window.onDidOpenTerminal(async (openedTerminal: theia.Terminal) => {
         //temp.
@@ -90,23 +78,23 @@ function runSimulation(experimentsDir: string, outputCsvDir: string) {
         // openedTerminal.processId.then((processId) => {
         //     theia.window.showInformationMessage(`Terminal.processId: ${processId}`);
         // });
-
         theia.window.showInformationMessage(
             `Palladio Simulation started in terminal ${openedTerminalId}, name: ${openedTerminal.name}`
         );
 
         // let t0 = performance.now();
         openedTerminal.sendText('clear && echo Palladio Simulation started.\n');
-        openedTerminal.sendText(`usr/RunExperimentAutomation.sh ${experimentsDir} ${outputCsvDir}`);
+        openedTerminal.sendText(`/usr/RunExperimentAutomation.sh ${inputExpDir} ${outputExpDir}`);
         //when the last task in terminal is done, capture it and report to user
+        //QUESTION: when will the container terminate itself?
         openedTerminal.sendText('echo Palladio Simulation ended');               
         // let t1 = performance.now();
         // let simTime = timeConversion(t1 - t0);
-        let exportCsvDir = "/output/" + outputCsvDir.replace(/(.*\/)*([^.]+).*/ig,"$2") 
-            + '-' + Date.parse(new Date().toString()) + '.csv';
-        openedTerminal.sendText(`cp ${outputCsvDir} ../projects/output/${exportCsvDir}`);
+        // stored by unix timestamp
+        let exportExpDir = "/projects/output/" + Date.parse(new Date().toString()) + "/"+ outputExpDir;
+        openedTerminal.sendText(`cp ${outputExpDir} ${exportExpDir}`);
         // theia.window.showInformationMessage(
-        //     `Palladio Simulation done in ${simTime}, the file is saved in output/${exportCsvDir}.`
+        //     `Palladio Simulation done in ${simTime}, the file is saved in ${exportExpDir}.`
         // );
 
         //could also be like this instead
