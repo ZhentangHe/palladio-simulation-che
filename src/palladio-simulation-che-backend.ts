@@ -4,7 +4,7 @@
  */
 
 import * as theia from '@theia/plugin';
-
+const {performance} = require('perf_hooks');
 export function start(context: theia.PluginContext) {
 
     const palladioSimulationStartCommand = {
@@ -36,18 +36,19 @@ export function start(context: theia.PluginContext) {
                     theia.window.showWarningMessage(error);
                 } finally {
                     return;
-                }                
+                }              
             } else if(args.length == 0) {
                 theia.window.showOpenDialog(PalladioSimImpFileOp).then(fileUri => {
                     if(fileUri) {
+                        inputExpDir = "/projects"+ fileUri[0].fsPath;
                         theia.window.showInformationMessage('selected file: ' + fileUri[0].fsPath);
-                        runSimulation("/projects" + fileUri[0].fsPath);
+                        runSimulation(inputExpDir);
                     }
                     else {
                         theia.window.showErrorMessage("specified file not found.")
                         console.log("no such file.");
                         return;
-                    }                    
+                    }                  
                 })
             } else {
                 theia.window.showErrorMessage("wrong argument counter. It should be 0 or 1.");
@@ -66,7 +67,11 @@ export function stop() {
 
 function runSimulation(inputExpDir: string) {
 
-    let outputExpDir = inputExpDir.replace(/(.*\/)*([^.]+).*/ig,"$2") + ".gen.experiments";
+    //sth is wrong here...
+    let outputExpDir = inputExpDir.substring(0, inputExpDir.lastIndexOf('/')) + inputExpDir.replace(/(.*\/)*([^.]+).*/ig,"$2") + ".gen.experiments";
+    theia.window.showInformationMessage(outputExpDir);
+    //temp assign
+    outputExpDir = "/projects/PalladioRunExperiment/PalladioRunExperiment/ExperimentData/model/Experiments/Capacity.gen.experiments";
 
     theia.commands.executeCommand('terminal-in-specific-container:new' ,'palladio-test');
     theia.window.onDidOpenTerminal(async (openedTerminal: theia.Terminal) => {
@@ -82,20 +87,21 @@ function runSimulation(inputExpDir: string) {
             `Palladio Simulation started in terminal ${openedTerminalId}, name: ${openedTerminal.name}`
         );
 
-        // let t0 = performance.now();
+        let t0 = performance.now();
         openedTerminal.sendText('clear && echo Palladio Simulation started.\n');
         openedTerminal.sendText(`/usr/RunExperimentAutomation.sh ${inputExpDir} ${outputExpDir}`);
         //when the last task in terminal is done, capture it and report to user
         //QUESTION: when will the container terminate itself?
-        openedTerminal.sendText('echo Palladio Simulation ended');               
-        // let t1 = performance.now();
-        // let simTime = timeConversion(t1 - t0);
+        openedTerminal.sendText('echo Palladio Simulation ended');             
+        let t1 = performance.now();
+        let simTime = timeConversion(t1 - t0);
         // stored by unix timestamp
         let exportExpDir = "/projects/output/" + Date.parse(new Date().toString()) + "/"+ outputExpDir;
-        openedTerminal.sendText(`cp ${outputExpDir} ${exportExpDir}`);
-        // theia.window.showInformationMessage(
-        //     `Palladio Simulation done in ${simTime}, the file is saved in ${exportExpDir}.`
-        // );
+        theia.window.showInformationMessage(exportExpDir);
+        //openedTerminal.sendText(`cp ${outputExpDir} ${exportExpDir}`);
+        theia.window.showInformationMessage(
+            `Palladio Simulation done in ${simTime}, the file is saved in ${exportExpDir}.`
+        );
 
         //could also be like this instead
         // theia.commands.executeCommand('file.copyDownloadLink').then(downloadLink =>{
@@ -111,7 +117,9 @@ function timeConversion(millisec: number) {
     let hours = (millisec / (1000 * 60 * 60)).toFixed(1);
     let days = (millisec / (1000 * 60 * 60 * 24)).toFixed(1);
 
-    if (+seconds < 60) {
+    if (+seconds < 1) {
+        return millisec + " Ms";
+    } else if (+seconds < 60) {
         return seconds + " Sec";
     } else if (+minutes < 60) {
         return minutes + " Min";
