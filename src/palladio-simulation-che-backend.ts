@@ -67,11 +67,13 @@ export function stop() {
 
 function runSimulation(inputExpDir: string) {
 
-    //sth is wrong here...
-    let outputExpDir = inputExpDir.substring(0, inputExpDir.lastIndexOf('/')) + inputExpDir.replace(/(.*\/)*([^.]+).*/ig,"$2") + ".gen.experiments";
+    let index = inputExpDir.lastIndexOf('/');
+    let dirPath = inputExpDir.substring(0, index + 1);
+    let filename = inputExpDir.substring(index + 1);
+    let outputExpDir = dirPath + filename.replace(/([^.]+).*/ig,"$1") + ".gen.experiments";
     theia.window.showInformationMessage(outputExpDir);
     //temp assign
-    outputExpDir = "/projects/PalladioRunExperiment/PalladioRunExperiment/ExperimentData/model/Experiments/Capacity.gen.experiments";
+    //outputExpDir = "/projects/PalladioRunExperiment/PalladioRunExperiment/ExperimentData/model/Experiments/Capacity.gen.experiments";
 
     theia.commands.executeCommand('terminal-in-specific-container:new' ,'palladio-test');
     theia.window.onDidOpenTerminal(async (openedTerminal: theia.Terminal) => {
