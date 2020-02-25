@@ -24,12 +24,9 @@ export function start(context: theia.PluginContext) {
     context.subscriptions.push(
         theia.commands.registerCommand(palladioSimulationStartCommand, (...args: any[]) => {
 
-            //the path to the original experiments file
-            let inputExpDir = "/projects/PalladioRunExperiment/PalladioRunExperiment/ExperimentData/model/Experiments/Capacity.experiments";
-
             if(args.length == 1) {
                 try {
-                    inputExpDir = args[0].toString();
+                    let inputExpDir = args[0].toString();
                     runSimulation(inputExpDir);
                 } catch (error) {
                     console.log(error);
@@ -40,9 +37,8 @@ export function start(context: theia.PluginContext) {
             } else if(args.length == 0) {
                 theia.window.showOpenDialog(PalladioSimImpFileOp).then(fileUri => {
                     if(fileUri) {
-                        inputExpDir = "/projects"+ fileUri[0].fsPath;
                         theia.window.showInformationMessage('selected file: ' + fileUri[0].fsPath);
-                        runSimulation(inputExpDir);
+                        runSimulation(fileUri[0].fsPath);
                     }
                     else {
                         theia.window.showErrorMessage("specified file not found.")
@@ -66,14 +62,12 @@ export function stop() {
 }
 
 function runSimulation(inputExpDir: string) {
-
+    theia.window.showInformationMessage(inputExpDir);
     let index = inputExpDir.lastIndexOf('/');
     let dirPath = inputExpDir.substring(0, index + 1);
     let filename = inputExpDir.substring(index + 1);
     let outputExpDir = dirPath + filename.replace(/([^.]+).*/ig,"$1") + ".gen.experiments";
     theia.window.showInformationMessage(outputExpDir);
-    //temp assign
-    //outputExpDir = "/projects/PalladioRunExperiment/PalladioRunExperiment/ExperimentData/model/Experiments/Capacity.gen.experiments";
 
     theia.commands.executeCommand('terminal-in-specific-container:new' ,'palladio-test');
     theia.window.onDidOpenTerminal(async (openedTerminal: theia.Terminal) => {
