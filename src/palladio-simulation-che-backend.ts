@@ -33,7 +33,7 @@ export function start(context: theia.PluginContext) {
                     theia.window.showWarningMessage(error);
                 } finally {
                     return;
-                }             
+                }           
             } else if(args.length == 0) {
                 theia.window.showOpenDialog(PalladioSimImpFileOp).then(fileUri => {
                     if(fileUri) {
@@ -44,7 +44,7 @@ export function start(context: theia.PluginContext) {
                         theia.window.showErrorMessage("specified file not found.")
                         console.log("no such file.");
                         return;
-                    }                 
+                    }               
                 })
             } else {
                 theia.window.showErrorMessage("wrong argument counter. It should be 0 or 1.");
@@ -68,7 +68,7 @@ function runSimulation(inputExpDir: string) {
     let filename = inputExpDir.substring(index + 1);
     let outputExpDir = dirPath + filename.replace(/([^.]+).*/ig,"$1") + ".gen.experiments";
 
-    theia.commands.executeCommand('terminal-in-specific-container:new' ,'palladiosimulator');
+    theia.commands.executeCommand('terminal-in-specific-container:new' ,'palladio-ea');
     theia.window.onDidOpenTerminal((openedTerminal: theia.Terminal) => {
 
         openedTerminal.processId.then((processId) => {
@@ -77,42 +77,47 @@ function runSimulation(inputExpDir: string) {
                 );
             return undefined;
         }).then(a => {
-            let t0 = performance.now();
-            openedTerminal.sendText('clear && echo Palladio Simulation started.\n');
-            openedTerminal.sendText(`time /usr/RunExperimentAutomation.sh ${inputExpDir} ${outputExpDir}`);
-            openedTerminal.sendText('echo Palladio Simulation ended');
-            return t0;
-        }).then(t0 => {
-            let t1 = performance.now();
-            let simTime = timeConversion(t1 - t0);
-            let exportExpDir = "output/" + Date.parse(new Date().toString());
-            openedTerminal.sendText(`cd projects && mkdir -p ${exportExpDir}`)
-            exportExpDir += '/'+ filename.replace(/([^.]+).*/ig,"$1") + ".gen.experiments";
-            openedTerminal.sendText(`cp ../${outputExpDir} ${exportExpDir}`);
-            theia.window.showInformationMessage(
-                `Files are saved in ${exportExpDir}.`
-            );
-        })
-          
+            openedTerminal.sendText(`bash /projects/PalladioSimulation/src/runsim.sh \
+                ${inputExpDir} \
+                ${outputExpDir} \
+                ${Date.parse(new Date().toString())} \
+                ${filename.replace(/([^.]+).*/ig,"$1")}`);
+
+            // let t0 = performance.now();
+            // openedTerminal.sendText('clear && echo Palladio Simulation started.\n');
+            // openedTerminal.sendText(`time /usr/RunExperimentAutomation.sh ${inputExpDir} ${outputExpDir}`);
+            // openedTerminal.sendText('echo Palladio Simulation ended');
+            // let t1 = performance.now();
+            // let simTime = timeConversion(t1 - t0);
+            // openedTerminal.sendText(`cd projects && mkdir -p output/${Date.parse(new Date().toString())}`);
+            // let exportExpDir = "output/" + Date.parse(new Date().toString());
+            // openedTerminal.sendText(`cd projects && mkdir -p ${exportExpDir}`);
+            // exportExpDir += '/'+ filename.replace(/([^.]+).*/ig,"$1") + ".gen.experiments";
+            // openedTerminal.sendText(`cp ../${outputExpDir} ${exportExpDir}`);
+            // theia.window.showInformationMessage(
+            //     `Files are saved in ${exportExpDir}.`
+            // );
+        });
+        
     })
 }
 
-function timeConversion(millisec: number) {
+// function timeConversion(millisec: number) {
 
-    let seconds = (millisec / 1000).toFixed(1);
-    let minutes = (millisec / (1000 * 60)).toFixed(1);
-    let hours = (millisec / (1000 * 60 * 60)).toFixed(1);
-    let days = (millisec / (1000 * 60 * 60 * 24)).toFixed(1);
+//     let seconds = (millisec / 1000).toFixed(1);
+//     let minutes = (millisec / (1000 * 60)).toFixed(1);
+//     let hours = (millisec / (1000 * 60 * 60)).toFixed(1);
+//     let days = (millisec / (1000 * 60 * 60 * 24)).toFixed(1);
 
-    if (+seconds < 1) {
-        return millisec + " Ms";
-    } else if (+seconds < 60) {
-        return seconds + " Sec";
-    } else if (+minutes < 60) {
-        return minutes + " Min";
-    } else if (+hours < 24) {
-        return hours + " Hrs";
-    } else {
-        return days + " Days";
-    }
-}
+//     if (+seconds < 1) {
+//         return millisec + " Ms";
+//     } else if (+seconds < 60) {
+//         return seconds + " Sec";
+//     } else if (+minutes < 60) {
+//         return minutes + " Min";
+//     } else if (+hours < 24) {
+//         return hours + " Hrs";
+//     } else {
+//         return days + " Days";
+//     }
+// }
