@@ -68,36 +68,32 @@ function runSimulation(inputExpDir: string) {
     let filename = inputExpDir.substring(index + 1);
     let outputExpDir = dirPath + filename.replace(/([^.]+).*/ig,"$1") + ".gen.experiments";
 
-    theia.commands.executeCommand('terminal-in-specific-container:new' ,'palladio-test');
-    theia.window.onDidOpenTerminal(async (openedTerminal: theia.Terminal) => {
-        //temp.
-        //await new Promise(resolve => setTimeout(resolve, 10000));
+    theia.commands.executeCommand('terminal-in-specific-container:new' ,'palladiosimulator');
+    theia.window.onDidOpenTerminal((openedTerminal: theia.Terminal) => {
 
-        const openedTerminalId = (await openedTerminal.processId).toString();
-        //alt.
-        // openedTerminal.processId.then((processId) => {
-        //     theia.window.showInformationMessage(`Terminal.processId: ${processId}`);
-        // });
-        theia.window.showInformationMessage(
-            `Palladio Simulation started in terminal ${openedTerminalId}, name: ${openedTerminal.name}`
-        );
-
-        let t0 = performance.now();
-        openedTerminal.sendText('clear && echo Palladio Simulation started.\n');
-        //openedTerminal.sendText(`/usr/RunExperimentAutomation.sh ${inputExpDir} ${outputExpDir}`);
-        //when the last task in terminal is done, capture it and report to user
-        //QUESTION: when will the container terminate itself?
-        openedTerminal.sendText('echo Palladio Simulation ended');            
-        let t1 = performance.now();
-        let simTime = timeConversion(t1 - t0);
-        // stored by unix timestamp
-        let exportExpDir = "output/" + Date.parse(new Date().toString());
-        openedTerminal.sendText(`cd projects && mkdir -p ${exportExpDir}`)
-        exportExpDir += '/'+ filename.replace(/([^.]+).*/ig,"$1") + ".gen.experiments";
-        openedTerminal.sendText(`cp ../${outputExpDir} ${exportExpDir}`);
-        theia.window.showInformationMessage(
-            `Palladio Simulation done in ${simTime}, the file is saved in ${exportExpDir}.`
-        );
+        openedTerminal.processId.then((processId) => {
+            theia.window.showInformationMessage(
+                `Palladio Simulation started in terminal ${processId}, name: ${openedTerminal.name}`
+                );
+            return undefined;
+        }).then(a => {
+            let t0 = performance.now();
+            openedTerminal.sendText('clear && echo Palladio Simulation started.\n');
+            openedTerminal.sendText(`time /usr/RunExperimentAutomation.sh ${inputExpDir} ${outputExpDir}`);
+            openedTerminal.sendText('echo Palladio Simulation ended');
+            return t0;
+        }).then(t0 => {
+            let t1 = performance.now();
+            let simTime = timeConversion(t1 - t0);
+            let exportExpDir = "output/" + Date.parse(new Date().toString());
+            openedTerminal.sendText(`cd projects && mkdir -p ${exportExpDir}`)
+            exportExpDir += '/'+ filename.replace(/([^.]+).*/ig,"$1") + ".gen.experiments";
+            openedTerminal.sendText(`cp ../${outputExpDir} ${exportExpDir}`);
+            theia.window.showInformationMessage(
+                `Files are saved in ${exportExpDir}.`
+            );
+        })
+          
     })
 }
 
