@@ -11,3 +11,4 @@ elapsed=$(($end - $start))
 echo "Palladio Architecture Simulation ended. Elapsed time: $(( ${elapsed} / 3600 ))h $(( (${elapsed} / 60) % 60 ))m $(( ${elapsed} % 60 ))s"
 cd projects && mkdir -p output/$3
 cp $2 output/$3/$4.gen.experiments
+cd ~/result && mv `ls -1 ./ | ls -1 | grep -v 'eclipse\|workspace'` /projects/output/$3
