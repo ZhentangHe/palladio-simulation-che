@@ -1,3 +1,7 @@
+if [ ! -d "wksp_eclipse/eclipse" ]
+then 
+    cp -r /usr/eclipse /wksp_eclipse/eclipse
+fi
 clear && echo "Palladio Architecture Simulation started."
 start=$(date +%s)
 # sleep $(($%10))
