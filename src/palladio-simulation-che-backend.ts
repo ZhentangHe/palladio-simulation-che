@@ -4,15 +4,18 @@
  */
 
 import * as theia from '@theia/plugin';
-const {performance} = require('perf_hooks');
+
 export function start(context: theia.PluginContext) {
 
-    const palladioSimulationStartCommand = {
+    const palladioArchSimStartCmd = {
         id: 'palladio.start',
         label: "Palladio: Start Simulation"
     };
 
-    const PalladioSimImpFileOp: theia.OpenDialogOptions = {
+    //somehow the filter won't work by default
+    //it works only after clicking on it and selecting 'Experiments Files'
+    //should be some bug related to theia
+    const PalladioArchSimImpFileOp: theia.OpenDialogOptions = {
         canSelectMany: false,
         canSelectFiles: true,
         openLabel: 'Simulate',
@@ -21,35 +24,39 @@ export function start(context: theia.PluginContext) {
         }
     }
 
-    context.subscriptions.push(
-        theia.commands.registerCommand(palladioSimulationStartCommand, (...args: any[]) => {
+    //TODO
+    //it should be passed from the devfile environment variable
+    //${env:CONTAINER_NAME}? ${config:CONTAINER_NAME}? or sth. like this
+    const containerName = "palladio-ea";
 
+    context.subscriptions.push(
+        theia.commands.registerCommand(palladioArchSimStartCmd, (...args: any[]) => {
+
+            //TODO
+            //refactor
+            //invoke by command
             if(args.length == 1) {
                 try {
-                    let inputExpDir = args[0].toString();
-                    runSimulation(inputExpDir);
+                    let experimentsPath = args[0].toString();
+                    runSimulation(experimentsPath, containerName);
                 } catch (error) {
                     console.log(error);
                     theia.window.showWarningMessage(error);
                 } finally {
                     return;
-                }           
+                }     
+            //invoke by command palette      
             } else if(args.length == 0) {
-                theia.window.showOpenDialog(PalladioSimImpFileOp).then(fileUri => {
+                theia.window.showOpenDialog(PalladioArchSimImpFileOp).then(fileUri => {
                     if(fileUri) {
                         theia.window.showInformationMessage('selected file: ' + fileUri[0].fsPath);
-                        runSimulation(fileUri[0].fsPath);
+                        runSimulation(fileUri[0].fsPath, containerName);
                     }
-                    else {
-                        theia.window.showErrorMessage("specified file not found.")
-                        console.log("no such file.");
-                        return;
-                    }               
-                })
+                    else throw Error("theia.Uri[] undefined.");            
+                }, reason => console.log(reason))
             } else {
                 theia.window.showErrorMessage("wrong argument counter. It should be 0 or 1.");
                 console.log("wrong argument counter.")
-                return;
             }
 
         })
@@ -61,63 +68,37 @@ export function stop() {
 
 }
 
-function runSimulation(inputExpDir: string) {
+/**
+* // TODO: refactor & parallel execution not tested.
+* @description This function runs the palladio architecture simulation in given container.
+* @param experimentsPath specifies the path to to be simulated .experiments file.
+* @param containerName specifies in which container the simulation is run.
+*/
+function runSimulation(experimentsPath: string, containerName: string) {
 
-    let index = inputExpDir.lastIndexOf('/');
-    let dirPath = inputExpDir.substring(0, index + 1);
-    let filename = inputExpDir.substring(index + 1);
-    let outputExpDir = dirPath + filename.replace(/([^.]+).*/ig,"$1") + ".gen.experiments";
+    let idx = experimentsPath.lastIndexOf('/');
+    let directory = experimentsPath.substring(0, idx + 1);
+    let filename = experimentsPath.substring(idx + 1);
+    let fileBaseName = filename.replace(/([^.]+).*/ig,"$1");
+    let genExperimentsPath = directory + fileBaseName + ".gen.experiments";
 
-    theia.commands.executeCommand('terminal-in-specific-container:new' ,'palladio-ea');
+    //the command was found using theia.commands.getcommands()
+    theia.commands.executeCommand('terminal-in-specific-container:new', containerName);
+
     theia.window.onDidOpenTerminal((openedTerminal: theia.Terminal) => {
-
         openedTerminal.processId.then((processId) => {
             theia.window.showInformationMessage(
                 `Palladio Simulation started in terminal ${processId}, name: ${openedTerminal.name}`
                 );
-            return undefined;
-        }).then(a => {
+            //using runsim.sh is just a temporary workaround
+            //could be refactored
+            //'/projects' should also be environment variable
             openedTerminal.sendText(`bash /projects/PalladioSimulation/src/runsim.sh \
-                ${inputExpDir} \
-                ${outputExpDir} \
+                ${experimentsPath} \
+                ${genExperimentsPath} \
                 ${Date.parse(new Date().toString())} \
-                ${filename.replace(/([^.]+).*/ig,"$1")}`);
+                ${fileBaseName}`);
 
-            // let t0 = performance.now();
-            // openedTerminal.sendText('clear && echo Palladio Simulation started.\n');
-            // openedTerminal.sendText(`time /usr/RunExperimentAutomation.sh ${inputExpDir} ${outputExpDir}`);
-            // openedTerminal.sendText('echo Palladio Simulation ended');
-            // let t1 = performance.now();
-            // let simTime = timeConversion(t1 - t0);
-            // openedTerminal.sendText(`cd projects && mkdir -p output/${Date.parse(new Date().toString())}`);
-            // let exportExpDir = "output/" + Date.parse(new Date().toString());
-            // openedTerminal.sendText(`cd projects && mkdir -p ${exportExpDir}`);
-            // exportExpDir += '/'+ filename.replace(/([^.]+).*/ig,"$1") + ".gen.experiments";
-            // openedTerminal.sendText(`cp ../${outputExpDir} ${exportExpDir}`);
-            // theia.window.showInformationMessage(
-            //     `Files are saved in ${exportExpDir}.`
-            // );
-        });
-        
+        }); 
     })
 }
-
-// function timeConversion(millisec: number) {
-
-//     let seconds = (millisec / 1000).toFixed(1);
-//     let minutes = (millisec / (1000 * 60)).toFixed(1);
-//     let hours = (millisec / (1000 * 60 * 60)).toFixed(1);
-//     let days = (millisec / (1000 * 60 * 60 * 24)).toFixed(1);
-
-//     if (+seconds < 1) {
-//         return millisec + " Ms";
-//     } else if (+seconds < 60) {
-//         return seconds + " Sec";
-//     } else if (+minutes < 60) {
-//         return minutes + " Min";
-//     } else if (+hours < 24) {
-//         return hours + " Hrs";
-//     } else {
-//         return days + " Days";
-//     }
-// }
